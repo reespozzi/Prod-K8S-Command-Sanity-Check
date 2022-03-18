@@ -1,0 +1,25 @@
+# K8S context in prompt
+setopt prompt_subst
+function getCluster() {
+  export CLUSTER=$(kubectl config current-context)
+}
+
+# Sanity Checks
+preexec () { 
+  if [[ ${CLUSTER} =~ "prod" || ${CLUSTER} =~ "production" || ${CLUSTER} =~ "live"]];then
+    if [[ ${1} =~ "delete" || ${1} =~ "edit" || ${1} =~ "uninstall" ]];then
+      read -q "execStatus?-----  DETECTED PROD CONTEXT: Definitely execute command? [y/n]  ----- "
+      if [[ ${execStatus} == "y" ]];then
+        printf "\nExecuting...\n"
+      else
+        printf "\nCancelled $1... Refreshing shell."
+        exec zsh
+      fi
+    else
+      echo "Successfully parsed for: [delete, edit, uninstall], executing command in prod context..."
+    fi
+  fi
+}
+
+typeset -a precmd_functions
+precmd_functions=(getCluster)
